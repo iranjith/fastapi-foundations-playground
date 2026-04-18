@@ -2,19 +2,49 @@ import json
 
 from pydantic import BaseModel
 
-class Car(BaseModel):
+class TripInput(BaseModel):
+    start: int
+    end: int
+    description: str
+
+
+class TripOutput(TripInput):
     id: int
+
+
+class CarInput(BaseModel):
     size: str
     fuel:str | None ='electrics'
     doors:int
     transmission:str | None = 'auto'
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "size": "m",
+                    "doors": 5,
+                    "transmission": "manual",
+                    "fuel": "hybrid"
+                }
+            ]
+        }
+    }
+
+class CarOutput(CarInput):
+    id: int
+    trips: list[TripOutput]=[]
 
 
 # class CarOutput(CarInput):
 #     id: int
 #     trips: list[TripOutput] = [] # noqa (turns off an incorrect pycharm warning)
 
-def load_db() -> list[Car]:
+def load_db() -> list[CarOutput]:
     """Load a list of Car objects from a JSON file"""
     with open("cars.json") as f:
-        return [Car.model_validate (obj) for obj in json.load(f)]
+        return [CarInput.model_validate (obj) for obj in json.load(f)]
+
+def save_db(cars: list[CarInput]):
+    with open("cars.json", 'w') as f:
+        json.dump([car.model_dump() for car in cars], f, indent=4)
